@@ -1,12 +1,13 @@
 use psutil::process::processes;
 use std::fmt;
-use std::thread;
 use std::time::Duration;
 use terminal_size::{terminal_size, Height, Width};
 
 extern crate cpu_monitor;
 use std::io;
 use cpu_monitor::CpuInstant;
+
+use memory_stats::memory_stats;
 
 struct ProcessInstance {
     pid: u32,
@@ -98,20 +99,35 @@ fn main() -> Result<(), io::Error> {
         let end = CpuInstant::now()?;
         let duration = end - start;
         let cpuperc = duration.non_idle() * 100.;
-        let bar = (session_width + 20 ) as f64 * (cpuperc / 100.);
+        let bar = (session_width + 15 ) as f64 * (cpuperc / 100.);
         let mut barcounter = 0.;
-        print!("CPU% {:.0}", cpuperc);
+        print!("CPU {:.0}% ", cpuperc);
         while barcounter <= bar { 
             print!("*");
             barcounter += 1.;
         }
         println!();
 
+        if let Some(usage) = memory_stats() {
+            let memperc = (usage.physical_mem as f64) / 8388608. * 100.;
+            //println!("Current physical memory usage: {:.3} GiB", (usage.physical_mem as f64)  );
+            let bar = (session_width + 15 ) as f64 * memperc  / 100.;
+            let mut barcounter = 0.;
+            print!("MEM {:.0}% ", memperc);
+            while barcounter <= bar { 
+                print!("*");
+                barcounter += 1.;
+            }
+        println!();
+        print!("jtop! ");
+            
+        } else {
+            println!("Couldn't get the current memory usage :(");
+        }
 
         // temporary dump to stdout
         process_listing.sort_by(|a, b| b.cpu_percent.total_cmp(&a.cpu_percent));
         let n_vec_element = process_listing.len();
-        println!("jtop!");
         println!("nproc {}", n_vec_element);
         println!();
         println!("{:>6}\t{:>2}\t{:>2}\t{}", "PID", "CPU%", "MEM%", "CMDLINE");
@@ -120,7 +136,5 @@ fn main() -> Result<(), io::Error> {
             println!("{}", process_listing[count]);
             count += 1;
         }
-        //thread::sleep(Duration::from_millis(2000))
     }
-    // Ok(())
 }
