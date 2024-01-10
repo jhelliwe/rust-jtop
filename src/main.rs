@@ -23,7 +23,7 @@ fn main() -> Result<(), io::Error> {
 
         // calculate CPU usage and generate a percentage bar
         let start = CpuInstant::now()?;
-        
+
         // Grab a "ps -ef" and store it in a Vector
         linuxproc::get_process_list(&mut process_listing, usable_width);
 
@@ -43,6 +43,7 @@ fn main() -> Result<(), io::Error> {
                 total: memtotal,
                 used: memused,
             }) => {
+                let memused = memtotal - memused;
                 let memperc = (memused as f64 / memtotal as f64) as f64 * 100.0;
                 let membar = render::drawbar("MEM%", session_width, memperc as f64);
 

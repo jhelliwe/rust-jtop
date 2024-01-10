@@ -110,7 +110,7 @@ pub fn memory_proc() -> MemoryResult {
                     let memvec: Vec<&str> = eachline.split_whitespace().collect();
                     let memtotal = &memvec[1];
                     return_value.total = memtotal.parse().unwrap();
-                } else if eachline.contains("Active:") {
+                } else if eachline.contains("MemAvailable:") {
                     let memvec: Vec<&str> = eachline.split_whitespace().collect();
                     let memavail = &memvec[1];
                     return_value.used = memavail.parse::<usize>().unwrap();
