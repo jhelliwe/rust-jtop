@@ -20,13 +20,14 @@ fn main() -> Result<(), io::Error> {
                                                 // listing
                                                 // process_listing is a Vector of all running processes
         let mut process_listing: Vec<linuxproc::ProcessInstance> = Vec::new();
-        linuxproc::get_process_list(&mut process_listing, usable_width);
-
-        // At this point our Vector process_listing contains a "ps -ef"
 
         // calculate CPU usage and generate a percentage bar
         let start = CpuInstant::now()?;
-        std::thread::sleep(Duration::from_millis(2000)); // Wait 2 seconds and take anothe
+        
+        // Grab a "ps -ef" and store it in a Vector
+        linuxproc::get_process_list(&mut process_listing, usable_width);
+
+        std::thread::sleep(Duration::from_millis(2000)); // Wait 2 seconds and take another
                                                          // measurement
         let end = CpuInstant::now()?;
         let duration = end - start;
@@ -34,7 +35,6 @@ fn main() -> Result<(), io::Error> {
         let cpubar = render::drawbar("CPU%", session_width, cpuperc);
 
         // calculate memory usage and generate a percentage bar
-        //let mut membar = String::new();
         let memresult: linuxproc::MemoryResult = linuxproc::memory_proc(); // memory_proc reads
                                                                            // /proc and returns a
                                                                            // Result<T, E>

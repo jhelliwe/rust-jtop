@@ -12,3 +12,8 @@ cpu-monitor = "0.1.1"
 memory-stats = "1.1.0"
 psutil = "3.2.2"
 terminal_size = "0.3.0"
+
+[profile.release]
+lto = true
+strip = true
+opt-level = "z"
