@@ -6,6 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+ansi_term = "0.12.1"
+clearscreen = "2.0.1"
 cpu-monitor = "0.1.1"
 memory-stats = "1.1.0"
 psutil = "3.2.2"

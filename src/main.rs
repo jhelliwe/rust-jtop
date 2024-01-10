@@ -1,140 +1,63 @@
-use psutil::process::processes;
-use std::fmt;
-use std::time::Duration;
-use terminal_size::{terminal_size, Height, Width};
-
 extern crate cpu_monitor;
-use std::io;
 use cpu_monitor::CpuInstant;
+use std::io;
+use std::process;
+use std::time::Duration;
 
-use memory_stats::memory_stats;
-
-struct ProcessInstance {
-    pid: u32,
-    cpu_percent: f32,
-    memory_percent: f32,
-    commandline: String,
-}
-
-impl fmt::Display for ProcessInstance {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{:>6}\t{:>2.1}\t{:>2.1}\t{}",
-            self.pid, self.cpu_percent, self.memory_percent, self.commandline
-        )
-    }
-}
+pub mod linuxproc;
+pub mod render;
+pub mod terminfo;
 
 fn main() -> Result<(), io::Error> {
     loop {
-        let mut session_width: usize = 0;
-        let mut session_height: usize = 0;
-        let size = terminal_size();
-        if let Some((Width(w), Height(h))) = size {
-            session_width = w as usize;
-            session_height = h as usize;
-        } else {
-            println!("Unable to get terminal size");
-        }
-        session_width -= 25;
-        session_height -= 7;
+        // terminfo - terminal size calculations here
+        let (session_width, session_height) = terminfo::termsize(); // termsize() exits if it could
+                                                                    // not detect the terminal size
+        let usable_width = session_width - 25; // The numerical fields length is subtracted so that
+                                               // we know where to truncate the cmdline
+        let usable_height = session_height - 7; // And we also subtract the top headers so we know
+                                                // how much room there is left for the process
+                                                // listing
+                                                // process_listing is a Vector of all running processes
+        let mut process_listing: Vec<linuxproc::ProcessInstance> = Vec::new();
+        linuxproc::get_process_list(&mut process_listing, usable_width);
 
-        // full_process_table contains details of all running processes
-        let full_process_table = processes().unwrap();
-        let mut process_listing: Vec<ProcessInstance> = Vec::new();
+        // At this point our Vector process_listing contains a "ps -ef"
 
-        // iterate through the full process table
-        for individual_process_wrapped in full_process_table {
-            match individual_process_wrapped {
-                Ok(mut individual_process) => match individual_process.cmdline() {
-                    Ok(Some(output)) => {
-                        let outfmt = format!("{0:.session_width$}", output);
-                        let process_info_to_push = ProcessInstance {
-                            pid: individual_process.pid(),
-                            cpu_percent: match individual_process.cpu_percent() {
-                                Ok(cpu_percent) => { if output.contains("jtop" ) { 0.0 } else { cpu_percent } },
-                                Err(_) => { 0.0 } 
-                            },
-                            memory_percent: match individual_process.memory_percent() {
-                                Ok(memory_percent) => { memory_percent },
-                                Err(_) => { 0.0 }
-                            },
-                            commandline: outfmt,
-                        };
-                        process_listing.push(process_info_to_push);
-                    }
-                    Ok(None) => {
-                        // let outfmt = format!("[{0:.session_width$}]", individual_process.name().unwrap());
-                        let outfmt = format!("[{0:.session_width$}]", match individual_process.name() {
-                            Ok(name) => { name },
-                            Err(_) => { "[defunct]".to_string() }
-                        });
-                        let process_info_to_push = ProcessInstance {
-                            pid: individual_process.pid(),
-                            cpu_percent: match individual_process.cpu_percent() {
-                                Ok(cpu_percent) => { cpu_percent },
-                                Err(_) => { 0.0 } 
-                            },
-                            memory_percent: match individual_process.memory_percent() {
-                                Ok(memory_percent) => { memory_percent },
-                                Err(_) => { 0.0 }
-                            },
-                            commandline: outfmt,
-                        };
-                        process_listing.push(process_info_to_push);
-                    }
-                    Err(_) => {
-                        continue;
-                    }
-                },
-                Err(_) => {
-                    continue;
-                }
-            }
-        }
-
+        // calculate CPU usage and generate a percentage bar
         let start = CpuInstant::now()?;
-        std::thread::sleep(Duration::from_millis(2000));
+        std::thread::sleep(Duration::from_millis(2000)); // Wait 2 seconds and take anothe
+                                                         // measurement
         let end = CpuInstant::now()?;
         let duration = end - start;
         let cpuperc = duration.non_idle() * 100.;
-        let bar = (session_width + 15 ) as f64 * (cpuperc / 100.);
-        let mut barcounter = 0.;
-        print!("CPU {:.0}% ", cpuperc);
-        while barcounter <= bar { 
-            print!("*");
-            barcounter += 1.;
-        }
-        println!();
+        let cpubar = render::drawbar("CPU%", session_width, cpuperc);
 
-        if let Some(usage) = memory_stats() {
-            let memperc = (usage.physical_mem as f64) / 8388608. * 100.;
-            //println!("Current physical memory usage: {:.3} GiB", (usage.physical_mem as f64)  );
-            let bar = (session_width + 15 ) as f64 * memperc  / 100.;
-            let mut barcounter = 0.;
-            print!("MEM {:.0}% ", memperc);
-            while barcounter <= bar { 
-                print!("*");
-                barcounter += 1.;
+        // calculate memory usage and generate a percentage bar
+        //let mut membar = String::new();
+        let memresult: linuxproc::MemoryResult = linuxproc::memory_proc(); // memory_proc reads
+                                                                           // /proc and returns a
+                                                                           // Result<T, E>
+        match memresult {
+            Ok(linuxproc::MemoryStat {
+                total: memtotal,
+                used: memused,
+            }) => {
+                let memperc = (memused as f64 / memtotal as f64) as f64 * 100.0;
+                let membar = render::drawbar("MEM%", session_width, memperc as f64);
+
+                render::screen(
+                    &mut process_listing,
+                    usable_width,
+                    usable_height,
+                    &cpubar,
+                    &membar,
+                );
             }
-        println!();
-        print!("jtop! ");
-            
-        } else {
-            println!("Couldn't get the current memory usage :(");
-        }
-
-        // temporary dump to stdout
-        process_listing.sort_by(|a, b| b.cpu_percent.total_cmp(&a.cpu_percent));
-        let n_vec_element = process_listing.len();
-        println!("nproc {}", n_vec_element);
-        println!();
-        println!("{:>6}\t{:>2}\t{:>2}\t{}", "PID", "CPU%", "MEM%", "CMDLINE");
-        let mut count = 0;
-        while count <= session_height && count <= n_vec_element {
-            println!("{}", process_listing[count]);
-            count += 1;
+            Err(_) => {
+                eprintln!("Problem reading /proc");
+                process::exit(1);
+            }
         }
     }
 }
