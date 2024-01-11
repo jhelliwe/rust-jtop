@@ -22,6 +22,8 @@ impl fmt::Display for ProcessInstance {
 pub struct MemoryStat {
     pub total: usize,
     pub used: usize,
+    pub swaptotal: usize,
+    pub swapfree: usize
 }
 
 impl MemoryStat {
@@ -78,7 +80,7 @@ pub fn get_process_list(process_listing: &mut Vec<ProcessInstance>, usable_width
                         pid: individual_process.pid(),
                         cpu_percent: match individual_process.cpu_percent() {
                             Ok(cpu_percent) => cpu_percent,
-                            Err(_) => 0.0,
+                            Err(_) => 666.0,
                         },
                         memory_percent: match individual_process.memory_percent() {
                             Ok(memory_percent) => memory_percent,
@@ -101,7 +103,7 @@ pub fn get_process_list(process_listing: &mut Vec<ProcessInstance>, usable_width
 
 pub type MemoryResult = Result<MemoryStat, Box<dyn Error>>;
 pub fn memory_proc() -> MemoryResult {
-    let mut return_value = MemoryStat { total: 0, used: 0 };
+    let mut return_value = MemoryStat { total: 0, used: 0, swaptotal: 0, swapfree: 0 };
     let mr = fs::read_to_string("/proc/meminfo");
     match mr {
         Ok(contents) => {
@@ -114,6 +116,14 @@ pub fn memory_proc() -> MemoryResult {
                     let memvec: Vec<&str> = eachline.split_whitespace().collect();
                     let memavail = &memvec[1];
                     return_value.used = memavail.parse::<usize>().unwrap();
+                } else if eachline.contains("SwapTotal:") {
+                    let memvec: Vec<&str> = eachline.split_whitespace().collect();
+                    let memtotal = &memvec[1];
+                    return_value.swaptotal = memtotal.parse().unwrap();
+                } else if eachline.contains("SwapFree:") {
+                    let memvec: Vec<&str> = eachline.split_whitespace().collect();
+                    let memtotal = &memvec[1];
+                    return_value.swapfree = memtotal.parse().unwrap();
                 }
             }
         }

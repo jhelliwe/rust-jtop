@@ -15,7 +15,7 @@ fn main() -> Result<(), io::Error> {
                                                                     // not detect the terminal size
         let usable_width = session_width - 25; // The numerical fields length is subtracted so that
                                                // we know where to truncate the cmdline
-        let usable_height = session_height - 7; // And we also subtract the top headers so we know
+        let usable_height = session_height - 8; // And we also subtract the top headers so we know
                                                 // how much room there is left for the process
                                                 // listing
                                                 // process_listing is a Vector of all running processes
@@ -42,10 +42,15 @@ fn main() -> Result<(), io::Error> {
             Ok(linuxproc::MemoryStat {
                 total: memtotal,
                 used: memused,
+                swaptotal,
+                swapfree,
             }) => {
                 let memused = memtotal - memused;
                 let memperc = (memused as f64 / memtotal as f64) as f64 * 100.0;
                 let membar = render::drawbar("MEM%", session_width, memperc as f64);
+                let swapused = swaptotal - swapfree;
+                let swapperc = (swapused as f64 / swaptotal as f64) as f64 * 100.0;
+                let swapbar = render::drawbar("SWP%", session_width, swapperc as f64);
 
                 render::screen(
                     &mut process_listing,
@@ -53,6 +58,7 @@ fn main() -> Result<(), io::Error> {
                     usable_height,
                     &cpubar,
                     &membar,
+                    &swapbar,
                 );
             }
             Err(_) => {

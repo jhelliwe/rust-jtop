@@ -8,6 +8,7 @@ pub fn screen(
     usable_height: usize,
     cpubar: &String,
     membar: &String,
+    swapbar: &String,
 ) {
     _usable_width += 25;
     clearscreen::clear().unwrap();
@@ -15,6 +16,7 @@ pub fn screen(
     let n_vec_element = process_listing.len();
     println!("{}", cpubar);
     println!("{}", membar);
+    println!("{}", swapbar);
     print!("{}", Colour::Green.paint("jtop! "));
     println!("nproc {}", n_vec_element);
     println!();
