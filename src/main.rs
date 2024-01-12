@@ -8,6 +8,8 @@ pub mod linuxproc;
 pub mod render;
 pub mod terminfo;
 
+pub const VERSION: &str = "0.01a";
+
 fn main() -> Result<(), io::Error> {
     loop {
         // terminfo - terminal size calculations here

@@ -17,7 +17,7 @@ pub fn screen(
     println!("{}", cpubar);
     println!("{}", membar);
     println!("{}", swapbar);
-    print!("{}", Colour::Green.paint("jtop! "));
+    print!("{} version {} - written in Rust by John Helliwell - ", Colour::Green.paint("jtop! "), crate::VERSION);
     println!("nproc {}", n_vec_element);
     println!();
     let style = Style::new().reverse();
