@@ -63,8 +63,8 @@ fn main() -> Result<(), io::Error> {
                     &swapbar,
                 );
             }
-            Err(_) => {
-                eprintln!("Problem reading /proc");
+            Err(err) => {
+                eprintln!("Problem reading /proc: {}", err);
                 process::exit(1);
             }
         }

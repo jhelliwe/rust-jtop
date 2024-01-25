@@ -21,7 +21,7 @@ pub fn screen(
     println!("nproc {}", n_vec_element);
     println!();
     let style = Style::new().reverse();
-    print!("{}", style.paint("PID     CPU%    MEM%    CMDLINE"));
+    print!("{}", style.paint("   PID  CPU%    MEM%    CMDLINE"));
     for _filler in 31.._usable_width {
         print!("{}", style.paint(" "));
     }
@@ -39,7 +39,6 @@ pub fn drawbar(title: &str, width: usize, percent: f64) -> String {
     let mut barcounter = 0.;
     _rendered_bar = format!("{} {:2.0}% ", title, percent);
     while barcounter <= bar {
-        //_rendered_bar = [&_rendered_bar, "|"].concat();
         if percent <= 50.0 {
             _rendered_bar = format!("{}{}", _rendered_bar, Colour::Green.paint("|"));
         } else if percent <= 75.0 {
