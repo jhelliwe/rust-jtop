@@ -48,5 +48,5 @@ pub fn drawbar(title: &str, width: usize, percent: f64) -> String {
         }
         barcounter += 1.;
     }
-    return format!("{}", _rendered_bar);
+    _rendered_bar.to_string()
 }

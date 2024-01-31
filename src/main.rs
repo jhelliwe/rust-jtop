@@ -8,7 +8,7 @@ pub mod linuxproc;
 pub mod render;
 pub mod terminfo;
 
-pub const VERSION: &str = "0.01a";
+pub const VERSION: &str = "0.02a";
 
 fn main() -> Result<(), io::Error> {
     loop {
@@ -48,11 +48,11 @@ fn main() -> Result<(), io::Error> {
                 swapfree,
             }) => {
                 let memused = memtotal - memused;
-                let memperc = (memused as f64 / memtotal as f64) as f64 * 100.0;
-                let membar = render::drawbar("MEM%", session_width, memperc as f64);
+                let memperc = (memused as f64 / memtotal as f64) * 100.0;
+                let membar = render::drawbar("MEM%", session_width, memperc);
                 let swapused = swaptotal - swapfree;
-                let swapperc = (swapused as f64 / swaptotal as f64) as f64 * 100.0;
-                let swapbar = render::drawbar("SWP%", session_width, swapperc as f64);
+                let swapperc = (swapused as f64 / swaptotal as f64) * 100.0;
+                let swapbar = render::drawbar("SWP%", session_width, swapperc);
 
                 render::screen(
                     &mut process_listing,

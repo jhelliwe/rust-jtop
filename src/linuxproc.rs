@@ -56,10 +56,7 @@ pub fn get_process_list(process_listing: &mut Vec<ProcessInstance>, usable_width
                             }
                             Err(_) => 0.0,
                         },
-                        memory_percent: match individual_process.memory_percent() {
-                            Ok(memory_percent) => memory_percent,
-                            Err(_) => 0.0,
-                        },
+                        memory_percent: individual_process.memory_percent().unwrap_or(0.0),
                         commandline: outfmt,
                     };
                     process_listing.push(process_info_to_push);
@@ -78,14 +75,8 @@ pub fn get_process_list(process_listing: &mut Vec<ProcessInstance>, usable_width
                     );
                     let process_info_to_push = ProcessInstance {
                         pid: individual_process.pid(),
-                        cpu_percent: match individual_process.cpu_percent() {
-                            Ok(cpu_percent) => cpu_percent,
-                            Err(_) => 666.0,
-                        },
-                        memory_percent: match individual_process.memory_percent() {
-                            Ok(memory_percent) => memory_percent,
-                            Err(_) => 0.0,
-                        },
+                        cpu_percent: individual_process.cpu_percent().unwrap_or(0.0),
+                        memory_percent: individual_process.memory_percent().unwrap_or(0.0),
                         commandline: outfmt,
                     };
                     process_listing.push(process_info_to_push);
